@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Craft Link - Artisan Marketplace</title>
+  <style>
+    :root {
+      --bg: #f4f2ee;
+      --surface: #ffffff;
+      --text: #1c1b19;
+      --muted: #5c5854;
+      --accent: #2d6a4f;
+      --accent-hover: #1b4332;
+      --accent-soft: #d8f3dc;
+      --accent-wash: #e9f5ec;
+      --border: #e0dbd4;
+      --shadow: 0 2px 12px rgba(28, 27, 25, 0.06);
+      --shadow-lg: 0 12px 40px rgba(28, 27, 25, 0.1);
+      --radius: 12px;
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.55; min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header {
+      background: linear-gradient(180deg, #fff 0%, #faf9f7 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.25rem;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .hero {
+      text-align: center;
+      padding: 2.25rem 1.25rem 2rem;
+      background: linear-gradient(165deg, var(--accent-wash) 0%, #fff 42%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-title { margin: 0; font-size: clamp(2.4rem, 8vw, 3.75rem); font-weight: 800; letter-spacing: -0.045em; color: var(--accent); line-height: 1.05; }
+    .hero-sub { margin: 0.85rem auto 0; max-width: 34rem; font-size: 0.88rem; color: var(--muted); }
+    main { flex: 1; max-width: 1120px; margin: 0 auto; padding: 1.25rem; width: 100%; }
+    .view { display: none; animation: fadeIn 0.28s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .section-title { font-size: 1.2rem; margin: 0 0 0.15rem; font-weight: 700; }
+    .section-lead { margin: 0 0 1.1rem; font-size: 0.88rem; color: var(--muted); }
+    .nav-tabs { display: flex; gap: 0.45rem; margin: 0; flex-wrap: wrap; justify-content: center; }
+    .nav-tabs button {
+      flex: 1; min-width: 88px; padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      border-radius: 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.12s;
+    }
+    .nav-tabs button:hover { border-color: var(--accent); background: var(--accent-wash); }
+    .nav-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .nav-tabs button:active { transform: scale(0.98); }
+    .product-grid { display: grid; grid-template-columns: 1fr; gap: 1.15rem; }
+    @media (min-width: 620px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+    .product-card {
+      background: var(--surface); border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .product-card .img-wrap { background: linear-gradient(180deg, #f0f4f1 0%, #e8ece9 100%); }
+    .product-card img { width: 100%; height: 220px; object-fit: cover; display: block; }
+    @media (min-width: 640px) { .product-card img { height: 248px; } }
+    .product-card-body { padding: 1rem 1.1rem 1.15rem; }
+    .cat-pill {
+      display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--accent-hover); background: var(--accent-soft);
+      padding: 0.2rem 0.5rem; border-radius: 6px; margin-bottom: 0.4rem;
+    }
+    .product-card h3 { margin: 0 0 0.25rem; font-size: 1.05rem; font-weight: 700; line-height: 1.3; }
+    .meta-line { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.65rem; }
+    .artisan-list { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+    .artisan-list li {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+      padding: 0.55rem 0; border-top: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .artisan-list li:first-of-type { border-top: none; padding-top: 0; }
+    .qty-badge { font-size: 0.78rem; color: var(--muted); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.5rem 0.95rem; border-radius: 8px; border: none;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s, opacity 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-secondary { background: var(--accent-wash); color: var(--accent-hover); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--accent-soft); }
+    .btn-danger { background: #fff; color: #b42318; border: 1px solid #fecdca; }
+    .btn-danger:hover { background: #fef3f2; }
+    .btn-small { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+    .empty-hint { color: var(--muted); font-size: 0.88rem; margin: 0; }
+    .form-card {
+      background: var(--surface); border-radius: var(--radius); padding: 1.25rem;
+      border: 1px solid var(--border); box-shadow: var(--shadow); max-width: 560px;
+    }
+    .form-card h3 { margin: 0 0 0.75rem; font-size: 0.95rem; font-weight: 700; color: var(--accent-hover); }
+    .form-group { margin-bottom: 0.85rem; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--text); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.6rem 0.7rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+    }
+    .form-group textarea { min-height: 56px; resize: vertical; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+    @media (max-width: 520px) { .form-row-2 { grid-template-columns: 1fr; } }
+    .toast { margin-top: 0.85rem; padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.86rem; display: none; }
+    .toast.show { display: block; }
+    .toast.success { background: var(--accent-soft); color: var(--accent-hover); }
+    .toast.error { background: #fde8e8; color: #8a2c2c; }
+    .info-callout {
+      font-size: 0.8rem; color: var(--muted); background: var(--accent-wash);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 0.75rem; margin-bottom: 1rem; line-height: 1.45;
+    }
+    .dash-grid { display: grid; gap: 1.1rem; }
+    .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
+    @media (min-width: 720px) { .stat-row { grid-template-columns: repeat(4, 1fr); } }
+    .stat-card {
+      background: var(--surface); border-radius: var(--radius); padding: 0.85rem;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .stat-card .label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.2rem; }
+    .stat-card .value { font-size: 1.15rem; font-weight: 700; }
+    .dash-panel {
+      background: var(--surface); border-radius: var(--radius); padding: 1.1rem;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .dash-panel h2 { margin: 0 0 0.75rem; font-size: 0.95rem; font-weight: 700; }
+    .dash-panel select { width: 100%; max-width: 360px; padding: 0.55rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .analytics-list { list-style: none; margin: 0; padding: 0; }
+    .analytics-list li { display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .analytics-list li.top { background: var(--accent-soft); margin: 0 -1.1rem; padding: 0.55rem 1.1rem; border-bottom: none; border-radius: 8px; font-weight: 600; }
+    .tx-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .tx-table th, .tx-table td { text-align: left; padding: 0.45rem 0.3rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .tx-table th { color: var(--muted); font-weight: 600; }
+    .orders-wide { overflow-x: auto; margin: 0 -0.25rem; }
+    .badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; }
+    .badge-wait { background: #fff3cd; color: #856404; }
+    .badge-ship { background: #cce5ff; color: #004085; }
+    .badge-done { background: var(--accent-soft); color: var(--accent-hover); }
+    .badge-pay { background: #fde6c4; color: #9a5b00; }
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(28, 27, 25, 0.5);
+      z-index: 200; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: var(--radius); max-width: 400px; width: 100%;
+      padding: 1.35rem; box-shadow: var(--shadow-lg); animation: fadeIn 0.22s ease; margin: auto;
+    }
+    .modal--wide { max-width: 520px; }
+    .modal h2 { margin: 0 0 0.65rem; font-size: 1.05rem; font-weight: 700; }
+    .modal .upi-id {
+      font-family: ui-monospace, monospace; font-size: 0.85rem; word-break: break-all;
+      background: var(--bg); padding: 0.45rem 0.6rem; border-radius: 8px; margin: 0.4rem 0 0.75rem;
+    }
+    .breakdown { background: var(--bg); border-radius: 8px; padding: 0.65rem 0.75rem; font-size: 0.86rem; margin: 0.5rem 0; }
+    .breakdown div { display: flex; justify-content: space-between; margin: 0.25rem 0; }
+    .breakdown .total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.45rem; margin-top: 0.45rem; }
+    .qr-wrap { text-align: center; margin: 0.85rem 0; }
+    .qr-wrap img { max-width: 260px; height: auto; border-radius: 8px; border: 1px solid var(--border); }
+    .modal-actions { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: 1rem; }
+    .modal-actions .btn { flex: 1; min-width: 110px; padding: 0.6rem 0.85rem; }
+    .upi-notice { font-size: 0.76rem; color: var(--muted); background: var(--accent-wash); border-radius: 8px; padding: 0.55rem 0.65rem; margin: 0 0 0.85rem; line-height: 1.45; }
+    .copy-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.65rem; }
+    .copy-row .btn { flex: 1; min-width: 130px; }
+    .address-block {
+      font-size: 0.82rem; line-height: 1.5; background: var(--bg); padding: 0.65rem 0.75rem;
+      border-radius: 8px; border: 1px dashed var(--border); white-space: pre-wrap;
+    }
+    .seller-order-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem; margin-bottom: 0.75rem; background: #fafaf8; }
+    .seller-order-card h4 { margin: 0 0 0.35rem; font-size: 0.88rem; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .admin-login-card { max-width: 400px; margin: 0 auto 1.5rem; }
+    .admin-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .modal--admin { max-width: 520px; max-height: 90vh; overflow-y: auto; }
+    .site-footer { text-align: center; padding: 1.5rem 1rem; border-top: 1px solid var(--border); background: var(--surface); margin-top: auto; }
+    .site-footer .motto { margin: 0; font-size: 0.95rem; color: var(--muted); font-style: italic; }
+    .site-footer .contact { margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--muted); }
+    .site-footer .note { margin: 0.35rem 0 0; font-size: 0.72rem; color: #a8a29e; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <nav class="nav-tabs" role="tablist">
+      <button type="button" class="active" data-view="marketplace" aria-selected="true">Marketplace</button>
+      <button type="button" data-view="register" aria-selected="false">Register</button>
+      <button type="button" data-view="seller" aria-selected="false">Seller login</button>
+      <button type="button" data-view="admin" aria-selected="false">Admin</button>
+    </nav>
+  </header>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <h1 class="hero-title" id="hero-title">Craft Link</h1>
+    <p class="hero-sub">Handmade by women artisans - fair prices, India-wide shipping, 5% platform fee on items, payouts after delivery.</p>
+  </section>
+
+  <main>
+    <section id="view-marketplace" class="view active" aria-label="Marketplace">
+      <h2 class="section-title">Marketplace</h2>
+      <p class="section-lead">Twenty crafts - each seller sets her <strong>price</strong>. You pay items times quantity plus shipping: same district Rs 50, same state Rs 70, other states Rs 100, plus Rs 20 when total parcel <strong>weight</strong> is above 2.</p>
+      <div id="product-grid" class="product-grid"></div>
+    </section>
+
+    <section id="view-register" class="view" aria-label="Artisan registration">
+      <h2 class="section-title">Seller registration</h2>
+      <p class="section-lead">Register with mobile, dispatch address, Login ID, and password. Buyers do not see your phone in the seller portal.</p>
+      <div class="form-card">
+        <div class="info-callout">We ship within <strong>India only</strong>. Match district &amp; state spelling with buyers for correct shipping.</div>
+        <form id="artisan-form" onsubmit="return false;">
+          <h3>Seller details</h3>
+          <div class="form-group">
+            <label for="artisan-name">Full name</label>
+            <input id="artisan-name" type="text" autocomplete="name" placeholder="Your name" required />
+          </div>
+          <div class="form-group">
+            <label for="seller-phone">Mobile number</label>
+            <input id="seller-phone" type="tel" inputmode="numeric" required placeholder="10-digit mobile" />
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="artisan-product">Product</label>
+              <select id="artisan-product" required></select>
+            </div>
+            <div class="form-group">
+              <label for="artisan-qty">Quantity in stock</label>
+              <input id="artisan-qty" type="number" min="1" step="1" value="1" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="seller-listing-price">Your selling price per unit (Rs)</label>
+            <input id="seller-listing-price" type="number" min="1" step="1" required placeholder="e.g. 450" />
+            <span style="font-size: 0.75rem; color: var(--muted); display: block; margin-top: 0.25rem;">Platform keeps 5% of item total; you receive 95% of items after delivery confirmation, plus shipping reimbursement.</span>
+          </div>
+          <h3>Seller portal login</h3>
+          <p style="margin: -0.35rem 0 0.65rem; font-size: 0.78rem; color: var(--muted);">Unique Login ID and password. Data stays in this browser (demo).</p>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="seller-loginid-reg">Login ID</label>
+              <input id="seller-loginid-reg" type="text" autocomplete="off" required placeholder="e.g. priya_shop" />
+            </div>
+            <div class="form-group">
+              <label for="seller-password-reg">Password</label>
+              <input id="seller-password-reg" type="password" autocomplete="new-password" required minlength="4" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="seller-password-confirm">Confirm password</label>
+            <input id="seller-password-confirm" type="password" autocomplete="new-password" required minlength="4" />
+          </div>
+          <h3>Dispatch address (India Post)</h3>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="seller-door">Door / flat no.</label>
+              <input id="seller-door" type="text" required placeholder="e.g. 12B" />
+            </div>
+            <div class="form-group">
+              <label for="seller-street">Street / area</label>
+              <input id="seller-street" type="text" required placeholder="Street name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="seller-district">District</label>
+            <input id="seller-district" type="text" required placeholder="e.g. Chennai" />
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="seller-state">State</label>
+              <select id="seller-state" required></select>
+            </div>
+            <div class="form-group">
+              <label for="seller-country">Country</label>
+              <input id="seller-country" type="text" value="India" readonly />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-register">Submit registration</button>
+        </form>
+        <div id="register-toast" class="toast" role="status"></div>
+      </div>
+    </section>
+
+    <section id="view-seller" class="view" aria-label="Seller login">
+      <h2 class="section-title">Seller portal</h2>
+      <p class="section-lead">Orders show <strong>quantity</strong> and <strong>ship-to address</strong> only - not buyer name or phone.</p>
+      <div id="seller-login-wrap" class="form-card" style="max-width: 420px;">
+        <h3 style="margin:0 0 0.75rem;font-size:0.95rem;">Sign in</h3>
+        <form id="seller-login-form" onsubmit="return false;">
+          <div class="form-group">
+            <label for="seller-login-id">Login ID</label>
+            <input id="seller-login-id" type="text" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="seller-login-password">Password</label>
+            <input id="seller-login-password" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-seller-login">Log in</button>
+        </form>
+        <div id="seller-login-toast" class="toast" role="status"></div>
+      </div>
+      <div id="seller-dashboard-wrap" class="form-card" style="display: none; max-width: 680px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 1rem;">
+          <div>
+            <p style="margin: 0; font-weight: 700;" id="seller-session-greeting"></p>
+            <p style="margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--muted);">Refill stock from Admin or your admin contact.</p>
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-seller-logout">Log out</button>
+        </div>
+        <div id="seller-hub-orders"></div>
+        <div class="form-card" style="margin-top: 1rem; max-width: 420px; padding: 1rem;">
+          <h3 style="margin: 0 0 0.5rem; font-size: 0.95rem;">Refill stock</h3>
+          <p style="margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--muted);">Add more units to your catalogue listing.</p>
+          <button type="button" class="btn btn-primary" id="btn-seller-refill">Add quantity</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-admin" class="view" aria-label="Admin">
+      <div id="admin-login-wrap" class="form-card admin-login-card">
+        <h2 class="section-title" style="text-align: center;">Admin access</h2>
+        <p class="section-lead" style="text-align: center;">Password: <code>12345</code> (demo only).</p>
+        <form id="admin-login-form" onsubmit="return false;">
+          <div class="form-group">
+            <label for="admin-access-code">Password</label>
+            <input id="admin-access-code" type="password" autocomplete="off" required placeholder="12345" />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Unlock admin</button>
+        </form>
+        <div id="admin-login-toast" class="toast" role="status"></div>
+      </div>
+      <div id="admin-dashboard-wrap" style="display: none;">
+        <div class="admin-bar">
+          <h2 class="section-title" style="margin: 0;">Admin control room</h2>
+          <button type="button" class="btn btn-secondary" id="btn-admin-logout">Log out admin</button>
+        </div>
+        <p class="section-lead">Full buyer &amp; seller details. Mark delivered, then mark artisan paid.</p>
+        <div class="dash-grid">
+          <div class="dash-panel">
+            <h2>Financial summary</h2>
+            <div class="stat-row">
+              <div class="stat-card"><div class="label">Total orders</div><div class="value" id="d-total-orders">0</div></div>
+              <div class="stat-card"><div class="label">UPI (total paid)</div><div class="value" id="d-total-upi">Rs 0.00</div></div>
+              <div class="stat-card"><div class="label">Platform (5%)</div><div class="value" id="d-platform">Rs 0.00</div></div>
+              <div class="stat-card"><div class="label">Artisan payout (items + ship)</div><div class="value" id="d-payout">Rs 0.00</div></div>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <h2>Reset data</h2>
+            <p style="margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--muted);">Clears sellers &amp; orders in this browser. Catalogue stays.</p>
+            <button type="button" class="btn btn-danger" id="btn-reset-sellers-orders">Clear sellers &amp; orders</button>
+          </div>
+          <div class="dash-panel">
+            <h2>Fulfilment queue</h2>
+            <div class="orders-wide">
+              <table class="tx-table"><thead>
+                <tr><th>Order</th><th>Seller</th><th>Buyer</th><th>Txn ID</th><th>Ship to</th><th>Rs</th><th>Track</th><th>Actions</th></tr>
+              </thead><tbody id="platform-orders-body"></tbody></table>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <h2>Artisan report</h2>
+            <label for="dash-artisan-select" class="visually-hidden">Select artisan</label>
+            <select id="dash-artisan-select" aria-label="Select artisan"><option value="">- Select an artisan -</option></select>
+            <p id="artisan-summary" style="margin: 0 0 0.75rem; font-size: 0.86rem; color: var(--muted);"></p>
+            <div class="orders-wide">
+              <table class="tx-table" id="artisan-tx-table"><thead>
+                <tr><th>Date</th><th>Product</th><th>Qty</th><th>Item Rs</th><th>Payout Rs</th><th>Status</th><th>Txn ID</th></tr>
+              </thead><tbody></tbody></table>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <h2>Product analytics</h2>
+            <ul class="analytics-list" id="product-analytics"></ul>
+          </div>
+          <div class="dash-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <h2 style="margin: 0;">Sellers</h2>
+              <button type="button" class="btn btn-primary btn-small" id="btn-admin-add-seller">Add seller</button>
+            </div>
+            <div class="orders-wide">
+              <table class="tx-table"><thead>
+                <tr><th>Seller</th><th>Login</th><th>Phone</th><th>Product</th><th>Rs</th><th>Qty</th><th></th></tr>
+              </thead><tbody id="admin-artisans-body"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="motto" id="footer-motto"></p>
+    <p class="contact"><strong>Contact:</strong> <a href="mailto:hello@craftlink.in">hello@craftlink.in</a> - <a href="tel:+9118004258899">+91-1800-425-8899</a></p>
+    <p class="note">Demo: data stored in this browser only.</p>
+  </footer>
+
+  <!-- Modals -->
+  <div id="admin-artisan-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="adm-modal-title">
+    <div class="modal modal--wide modal--admin">
+      <h2 id="adm-modal-title">Edit seller</h2>
+      <form id="admin-artisan-form" onsubmit="return false;">
+        <input type="hidden" id="adm-art-edit-index" value="-1" />
+        <input type="hidden" id="adm-art-id" value="" />
+        <div class="form-row-2">
+          <div class="form-group"><label for="adm-art-name">Full name</label><input id="adm-art-name" type="text" required /></div>
+          <div class="form-group"><label for="adm-art-phone">Mobile</label><input id="adm-art-phone" type="tel" inputmode="numeric" required /></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group"><label for="adm-art-login">Login ID</label><input id="adm-art-login" type="text" required autocomplete="off" /></div>
+          <div class="form-group"><label for="adm-art-pass">Password</label><input id="adm-art-pass" type="password" autocomplete="new-password" placeholder="Leave blank to keep" /></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group"><label for="adm-art-product">Catalogue product</label><select id="adm-art-product" required></select></div>
+          <div class="form-group"><label for="adm-art-price">Price per unit (Rs)</label><input id="adm-art-price" type="number" min="1" step="1" required /></div>
+        </div>
+        <div class="form-group"><label for="adm-art-qty">Quantity</label><input id="adm-art-qty" type="number" min="0" step="1" required /></div>
+        <h3 style="margin: 0.75rem 0 0.5rem; font-size: 0.88rem;">Dispatch address</h3>
+        <div class="form-row-2">
+          <div class="form-group"><label for="adm-art-door">Door / flat</label><input id="adm-art-door" type="text" required /></div>
+          <div class="form-group"><label for="adm-art-street">Street</label><input id="adm-art-street" type="text" required /></div>
+        </div>
+        <div class="form-group"><label for="adm-art-district">District</label><input id="adm-art-district" type="text" required /></div>
+        <div class="form-row-2">
+          <div class="form-group"><label for="adm-art-state">State</label><select id="adm-art-state" required></select></div>
+          <div class="form-group"><label for="adm-art-country">Country</label><input id="adm-art-country" type="text" value="India" readonly /></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-adm-art-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-adm-art-save">Save seller</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="checkout-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+    <div class="modal modal--wide">
+      <h2 id="checkout-title">Delivery &amp; quantity</h2>
+      <p style="margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--muted);">India only. Shipping uses seller and buyer district and state and total parcel weight.</p>
+      <form id="checkout-form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="buyer-qty">Quantity</label>
+          <input id="buyer-qty" type="number" min="1" step="1" value="1" required />
+        </div>
+        <h3 style="margin: 0 0 0.5rem; font-size: 0.88rem;">Buyer</h3>
+        <div class="form-row-2">
+          <div class="form-group"><label for="buyer-name">Full name</label><input id="buyer-name" type="text" required autocomplete="name" /></div>
+          <div class="form-group"><label for="buyer-phone">Phone</label><input id="buyer-phone" type="tel" required inputmode="numeric" placeholder="10-digit mobile" /></div>
+        </div>
+        <h3 style="margin: 0.75rem 0 0.5rem; font-size: 0.88rem;">Shipping address</h3>
+        <div class="form-row-2">
+          <div class="form-group"><label for="buyer-door">Door / flat no.</label><input id="buyer-door" type="text" required /></div>
+          <div class="form-group"><label for="buyer-street">Street / area</label><input id="buyer-street" type="text" required /></div>
+        </div>
+        <div class="form-group"><label for="buyer-district">District</label><input id="buyer-district" type="text" required /></div>
+        <div class="form-row-2">
+          <div class="form-group"><label for="buyer-state">State</label><select id="buyer-state" required></select></div>
+          <div class="form-group"><label for="buyer-country">Country</label><input id="buyer-country" type="text" value="India" readonly /></div>
+        </div>
+        <div class="breakdown" id="checkout-shipping-preview">
+          <div><span>Items (qty x unit)</span><span id="chk-product-price">-</span></div>
+          <div><span>Shipping</span><span id="chk-ship-band">-</span></div>
+          <div><span>Extra when weight above 2</span><span id="chk-weight-extra">-</span></div>
+          <div class="total"><span>Total to pay (UPI)</span><span id="chk-total">-</span></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-checkout-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-checkout-pay">Continue to UPI</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="payment-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+    <div class="modal modal--wide">
+      <h2 id="pay-title">Pay with UPI</h2>
+      <div class="breakdown" id="pay-breakdown"></div>
+      <p style="margin: 0; font-size: 0.8rem; color: var(--muted);">UPI ID</p>
+      <div class="upi-id" id="pay-upi-display"></div>
+      <div class="copy-row">
+        <button type="button" class="btn btn-secondary" id="btn-copy-upi">Copy UPI ID</button>
+        <button type="button" class="btn btn-secondary" id="btn-copy-upi-link">Copy payment link</button>
+      </div>
+      <p class="upi-notice"><strong>Same account?</strong> UPI may block paying yourself - use another device if needed.</p>
+      <div class="qr-wrap"><img id="pay-qr" alt="UPI QR code" width="260" height="260" /></div>
+      <div class="form-group">
+        <label for="txn-id">UPI transaction ID / reference</label>
+        <input id="txn-id" type="text" required placeholder="From SMS or bank app" autocomplete="off" />
+      </div>
+      <p style="font-size: 0.76rem; color: var(--muted); margin: 0;">After paying, enter the reference above and tap <strong>I paid</strong>.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-pay">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-paid">I paid</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="success-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>Order placed</h2>
+      <p id="success-msg" style="margin: 0 0 1rem; font-size: 0.9rem;"></p>
+      <button type="button" class="btn btn-primary" id="btn-success-ok">OK</button>
+    </div>
+  </div>
+
+  <!-- Cloud sync (Firebase) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+  <script>
+(function () {
+  'use strict';
+
+  var STORAGE_PRODUCTS = 'craftlink_products';
+  var STORAGE_ARTISANS = 'craftlink_artisans';
+  var STORAGE_ORDERS = 'craftlink_orders';
+  var STORAGE_SELLER_SESSION = 'craftlink_seller_session';
+  var STORAGE_ADMIN_SESSION = 'craftlink_admin_session';
+  var CATALOG_VERSION = 2;
+
+  // -----------------------------
+  // Cloud sync settings (IMPORTANT)
+  // -----------------------------
+  // 1) Create a Firebase project + Firestore DB.
+  // 2) Paste your Firebase "web app" config below.
+  // 3) Set CLOUD_SYNC_ENABLED = true.
+  var CLOUD_SYNC_ENABLED = true; // <-- change to true after you add config
+  var FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyB_CKxZGIT7WivpV6fu5xsOawdm487QrEo',
+    authDomain: 'craftlink-app.firebaseapp.com',
+    projectId: 'craftlink-app',
+    storageBucket: 'craftlink-app.firebasestorage.app',
+    messagingSenderId: '1057479699100',
+    appId: '1:1057479699100:web:edf4b482b8bf5557721b59'
+  };
+  // Use one shared storeId for all devices/users (demo).
+  // If you want separate shops later, change this value.
+  var CLOUD_STORE_ID = 'craftlink_main';
+
+  var ADMIN_ACCESS_CODE = '12345';
+  var UPI_ID = 'yuvadharanie@oksbi';
+  var MOTTO = 'Connecting rural artisans to every home.';
+
+  var SHIP_SAME_DISTRICT = 50;
+  var SHIP_SAME_STATE = 70;
+  var SHIP_DIFF_STATE = 100;
+  var SHIP_WEIGHT_EXTRA = 20;
+  var WEIGHT_THRESHOLD = 2;
+
+  var INDIAN_STATES = [
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
+    'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
+    'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+    'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
+    'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh',
+    'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir', 'Ladakh',
+    'Lakshadweep', 'Puducherry'
+  ];
+
+  var SEED_PRODUCTS = [
+    { id: 1, name: 'Handloom Cotton Dupatta', category: 'Textiles & drapes', weightKg: 0.35, image: 'https://images.unsplash.com/photo-1584990347449-a8b291f65b0b?w=900&h=720&fit=crop&q=85' },
+    { id: 2, name: 'Terracotta & Oxidised Earrings', category: 'Jewellery', weightKg: 0.08, image: 'https://images.unsplash.com/photo-1617032213177-68da40f6ed43?w=900&h=720&fit=crop&q=85' },
+    { id: 3, name: 'Block Print Cotton Tote', category: 'Bags', weightKg: 0.42, image: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=900&h=720&fit=crop&q=85' },
+    { id: 4, name: 'Brass Diya & Puja Set', category: 'Home & festive', weightKg: 0.85, image: 'https://images.unsplash.com/photo-1602874801007-bd458bb1b863?w=900&h=720&fit=crop&q=85' },
+    { id: 5, name: 'Embroidered Cushion Cover', category: 'Home linen', weightKg: 0.48, image: 'https://images.unsplash.com/photo-1584100936595-c2a5c718b1a0?w=900&h=720&fit=crop&q=85' },
+    { id: 6, name: 'Jute & Macrame Wall Hanging', category: 'Wall decor', weightKg: 1.1, image: 'https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=900&h=720&fit=crop&q=85' },
+    { id: 7, name: 'Studio Pottery Kulhad Set', category: 'Pottery', weightKg: 1.45, image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=900&h=720&fit=crop&q=85' },
+    { id: 8, name: 'Silk Potli & Clutch', category: 'Bags', weightKg: 0.22, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=900&h=720&fit=crop&q=85' },
+    { id: 9, name: 'Macrame Plant Hanger', category: 'Home decor', weightKg: 0.55, image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=900&h=720&fit=crop&q=85' },
+    { id: 10, name: 'Sheesham Spice & Masala Box', category: 'Kitchen wood', weightKg: 2.4, image: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=900&h=720&fit=crop&q=85' },
+    { id: 11, name: 'Ajrakh Stole / Scarf', category: 'Textiles & drapes', weightKg: 0.28, image: 'https://images.unsplash.com/photo-1520903671845-afd8d49f86ec?w=900&h=720&fit=crop&q=85' },
+    { id: 12, name: 'Lac & Glass Bangles Set', category: 'Jewellery', weightKg: 0.12, image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220c?w=900&h=720&fit=crop&q=85' },
+    { id: 13, name: 'Bamboo & Cane Basket', category: 'Baskets', weightKg: 0.9, image: 'https://images.unsplash.com/photo-1595428774223-c409191362de?w=900&h=720&fit=crop&q=85' },
+    { id: 14, name: 'Cold-Process Herbal Soap Bars', category: 'Wellness', weightKg: 0.35, image: 'https://images.unsplash.com/photo-1600857544200-b2b666518e59?w=900&h=720&fit=crop&q=85' },
+    { id: 15, name: 'Soy Wax Diya Candles', category: 'Home & festive', weightKg: 0.5, image: 'https://images.unsplash.com/photo-1602609420608-4f1c897fc41f?w=900&h=720&fit=crop&q=85' },
+    { id: 16, name: 'Channapatna Wooden Toys', category: 'Toys & gifts', weightKg: 0.65, image: 'https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=900&h=720&fit=crop&q=85' },
+    { id: 17, name: 'Hand Block Print Running Fabric', category: 'Textiles & drapes', weightKg: 0.6, image: 'https://images.unsplash.com/photo-1617127360468-223a1cc2c2c9?w=900&h=720&fit=crop&q=85' },
+    { id: 18, name: 'Leather Kolhapuri Slippers', category: 'Footwear', weightKg: 0.75, image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=900&h=720&fit=crop&q=85' },
+    { id: 19, name: 'Hand-painted Ceramic Coasters', category: 'Tableware', weightKg: 0.4, image: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=900&h=720&fit=crop&q=85' },
+    { id: 20, name: 'Brass Incense & Agarbatti Stand', category: 'Home & festive', weightKg: 0.55, image: 'https://images.unsplash.com/photo-1605218427306-02218a0afa9b?w=900&h=720&fit=crop&q=85' }
+  ];
+
+  function loadJSON(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function saveJSON(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  // -----------------------------
+  // Cloud sync (Firestore)
+  // -----------------------------
+  var cloud = {
+    enabled: false,
+    ready: false,
+    db: null,
+    auth: null,
+    unsubArtisans: null,
+    unsubOrders: null
+  };
+
+  function cloudOkToEnable() {
+    if (!CLOUD_SYNC_ENABLED) return false;
+    if (!window.firebase || !firebase.initializeApp) return false;
+    if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.projectId) return false;
+    return true;
+  }
+
+  function cloudDocPath(kind, id) {
+    // stores/{storeId}/{kind}/{id}
+    return (
+      'stores/' +
+      encodeURIComponent(CLOUD_STORE_ID) +
+      '/' +
+      kind +
+      '/' +
+      encodeURIComponent(id)
+    );
+  }
+
+  function cloudColRef(kind) {
+    return cloud.db.collection('stores').doc(CLOUD_STORE_ID).collection(kind);
+  }
+
+  function cloudMetaDocRef() {
+    return cloud.db.collection('stores').doc(CLOUD_STORE_ID).collection('meta').doc('state');
+  }
+
+  function cloudEnable() {
+    if (cloud.enabled) return;
+    cloud.enabled = cloudOkToEnable();
+    if (!cloud.enabled) return;
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      cloud.db = firebase.firestore();
+      cloud.auth = firebase.auth();
+    } catch (e) {
+      cloud.enabled = false;
+    }
+  }
+
+  function cloudSignIn() {
+    if (!cloud.enabled || !cloud.auth) return Promise.resolve(false);
+    return cloud.auth
+      .signInAnonymously()
+      .then(
+        function () { return true; },
+        function () { return false; }
+      );
+  }
+
+  function cloudListen(kind, onArr) {
+    if (!cloud.enabled || !cloud.db) return function () {};
+    return cloudColRef(kind).onSnapshot(
+      function (snap) {
+        var arr = [];
+        snap.forEach(function (doc) {
+          var d = doc.data() || {};
+          // Keep document id in sync with record id (prefer record id)
+          if (!d.id) d.id = doc.id;
+          arr.push(d);
+        });
+        onArr(arr);
+      },
+      function () {
+        // ignore errors; local cache still works
+      }
+    );
+  }
+
+  function cloudGetAll(kind) {
+    if (!cloud.enabled || !cloud.db) return Promise.resolve([]);
+    return cloudColRef(kind)
+      .get()
+      .then(function (snap) {
+        var arr = [];
+        snap.forEach(function (doc) {
+          var d = doc.data() || {};
+          if (!d.id) d.id = doc.id;
+          arr.push(d);
+        });
+        return arr;
+      });
+  }
+
+  function cloudOverwriteCollection(kind, arr, getIdFn) {
+    if (!cloud.enabled || !cloud.db) return Promise.resolve(false);
+    var col = cloudColRef(kind);
+    var byId = {};
+    arr.forEach(function (x) {
+      var id = (getIdFn ? getIdFn(x) : x && x.id) || '';
+      id = String(id);
+      if (!id) return;
+      byId[id] = x;
+    });
+    return col.get().then(function (snap) {
+      var batch = cloud.db.batch();
+      var existingIds = {};
+      snap.forEach(function (doc) {
+        existingIds[doc.id] = true;
+      });
+      Object.keys(existingIds).forEach(function (id) {
+        if (!byId[id]) batch.delete(col.doc(id));
+      });
+      Object.keys(byId).forEach(function (id) {
+        batch.set(col.doc(id), byId[id], { merge: false });
+      });
+      return batch.commit().then(
+        function () { return true; },
+        function () { return false; }
+      );
+    });
+  }
+
+  function cloudSetMeta(data) {
+    if (!cloud.enabled || !cloud.db) return Promise.resolve(false);
+    return cloudMetaDocRef().set(data, { merge: true }).then(
+      function () { return true; },
+      function () { return false; }
+    );
+  }
+
+  function cloudGetMeta() {
+    if (!cloud.enabled || !cloud.db) return Promise.resolve(null);
+    return cloudMetaDocRef().get().then(function (doc) {
+      return doc.exists ? (doc.data() || {}) : null;
+    });
+  }
+
+  function normalizeLoc(s) {
+    return String(s || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+  }
+
+  function computeShipping(sellerDistrict, sellerState, buyerDistrict, buyerState, totalWeightKg) {
+    var sd = normalizeLoc(sellerDistrict);
+    var ss = normalizeLoc(sellerState);
+    var bd = normalizeLoc(buyerDistrict);
+    var bs = normalizeLoc(buyerState);
+    var base;
+    var bandLabel;
+    if (bd && bd === sd && bs === ss) {
+      base = SHIP_SAME_DISTRICT;
+      bandLabel = 'Same district';
+    } else if (bs === ss) {
+      base = SHIP_SAME_STATE;
+      bandLabel = 'Same state, diff. district';
+    } else {
+      base = SHIP_DIFF_STATE;
+      bandLabel = 'Different states';
+    }
+    var w = Number(totalWeightKg) || 0;
+    var extra = w > WEIGHT_THRESHOLD ? SHIP_WEIGHT_EXTRA : 0;
+    return {
+      baseShipping: base,
+      weightSurcharge: extra,
+      shippingTotal: base + extra,
+      bandLabel: bandLabel
+    };
+  }
+
+  function formatAddressLines(door, street, district, state, country) {
+    var lines = [];
+    if (door) lines.push(String(door).trim());
+    if (street) lines.push(String(street).trim());
+    var cityLine = [district, state].filter(Boolean).join(', ');
+    if (cityLine) lines.push(cityLine);
+    if (country) lines.push(String(country).trim());
+    return lines.join('\n');
+  }
+
+  function generateSellerId() {
+    return 'SL-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+  }
+
+  function generateOrderId() {
+    return 'CL-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  }
+
+  function migrateProducts(products) {
+    var seedById = {};
+    SEED_PRODUCTS.forEach(function (p) {
+      seedById[p.id] = p;
+    });
+    return products.map(function (p) {
+      var s = seedById[p.id];
+      var w = p.weightKg != null ? Number(p.weightKg) : s && s.weightKg != null ? s.weightKg : 0.5;
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category || (s && s.category) || 'Handmade',
+        weightKg: w,
+        image: p.image || (s && s.image) || ''
+      };
+    });
+  }
+
+  function migrateArtisans(arr, defaultPriceByProductId) {
+    var def = defaultPriceByProductId || {};
+    return arr.map(function (a) {
+      var lp = Number(a.listingPrice);
+      if (!lp || lp <= 0) lp = Number(a.price) || Number(def[a.productId]) || 299;
+      return {
+        id: a.id || generateSellerId(),
+        loginId: (a.loginId || '').trim().toLowerCase().replace(/\s/g, ''),
+        password: a.password || '',
+        phone: (a.phone || '').replace(/\D/g, ''),
+        name: a.name,
+        productId: a.productId,
+        listingPrice: lp,
+        quantity: a.quantity,
+        doorNo: a.doorNo || '',
+        street: a.street || '',
+        district: a.district || '',
+        state: a.state || '',
+        country: a.country || 'India'
+      };
+    });
+  }
+
+  function attachArtisanIdsToOrders(orders, artisans) {
+    return orders.map(function (o) {
+      if (o.artisanId) return o;
+      var ix = o.artisanIndex;
+      if (ix != null && ix >= 0 && artisans[ix]) o.artisanId = artisans[ix].id;
+      return o;
+    });
+  }
+
+  function migrateOrders(arr) {
+    return arr.map(function (o) {
+      var price = Number(o.price) || 0;
+      var qty = Number(o.quantity) >= 1 ? Number(o.quantity) : 1;
+      var lineTotal = o.lineTotal != null ? Number(o.lineTotal) : price;
+      if (lineTotal <= 0 && price > 0) lineTotal = price * qty;
+      var shipping = Number(o.shipping) || 0;
+      var itemsEarning =
+        o.artisanItemsEarning != null
+          ? Number(o.artisanItemsEarning)
+          : o.artisanEarning != null
+            ? Number(o.artisanEarning)
+            : Math.round(lineTotal * 0.95 * 100) / 100;
+      // Backward compat: older orders stored `artisanEarning` as items-only (95% of item Rs).
+      // Newer orders store `artisanItemsEarning` (items part) and `artisanEarning` (items + shipping payout).
+      var payoutEarning =
+        o.artisanItemsEarning != null && o.artisanEarning != null
+          ? Number(o.artisanEarning)
+          : itemsEarning + shipping;
+      return {
+        id: o.id || generateOrderId(),
+        date: o.date || new Date().toISOString(),
+        productName: o.productName,
+        artisanName: o.artisanName,
+        artisanIndex: o.artisanIndex != null ? o.artisanIndex : -1,
+        artisanId: o.artisanId || '',
+        quantity: qty,
+        unitPrice: o.unitPrice != null ? Number(o.unitPrice) : price / qty || price,
+        price: lineTotal,
+        shipping: shipping,
+        baseShipping: o.baseShipping != null ? o.baseShipping : 0,
+        weightSurcharge: o.weightSurcharge != null ? o.weightSurcharge : 0,
+        totalPaid: o.totalPaid != null ? Number(o.totalPaid) : lineTotal + (Number(o.shipping) || 0),
+        commission: o.commission != null ? o.commission : Math.round(lineTotal * 0.05 * 100) / 100,
+        artisanItemsEarning: itemsEarning,
+        artisanEarning: payoutEarning,
+        productWeightKg: o.productWeightKg != null ? o.productWeightKg : 0,
+        transactionId: o.transactionId || '',
+        buyerName: o.buyerName || '',
+        buyerPhone: o.buyerPhone || '',
+        buyerDoor: o.buyerDoor || '',
+        buyerStreet: o.buyerStreet || '',
+        buyerDistrict: o.buyerDistrict || '',
+        buyerState: o.buyerState || '',
+        buyerCountry: o.buyerCountry || 'India',
+        shipToAddressOnly: o.shipToAddressOnly || '',
+        courierNumber: o.courierNumber || '',
+        delivered: !!o.delivered,
+        artisanPaidOut: !!o.artisanPaidOut
+      };
+    });
+  }
+
+  function initData() {
+    var rawProducts = loadJSON(STORAGE_PRODUCTS, null);
+    var priceHintMap = {};
+    if (rawProducts && rawProducts.length) {
+      rawProducts.forEach(function (p) {
+        priceHintMap[p.id] = Number(p.price) || Number(p.suggestedPrice) || 0;
+      });
+    }
+    var verRaw = localStorage.getItem('craftlink_catalog_ver');
+    var ver = verRaw == null ? 0 : parseInt(verRaw, 10);
+    if (isNaN(ver)) ver = 0;
+    if (!rawProducts || !rawProducts.length || ver < CATALOG_VERSION) {
+      saveJSON(STORAGE_PRODUCTS, SEED_PRODUCTS);
+      localStorage.setItem('craftlink_catalog_ver', String(CATALOG_VERSION));
+    } else {
+      saveJSON(STORAGE_PRODUCTS, migrateProducts(rawProducts));
+    }
+    var artisans = loadJSON(STORAGE_ARTISANS, null);
+    if (!artisans) artisans = [];
+    artisans = migrateArtisans(artisans, priceHintMap);
+    saveJSON(STORAGE_ARTISANS, artisans);
+    memArtisans = artisans;
+
+    var orders = loadJSON(STORAGE_ORDERS, null);
+    if (!orders) orders = [];
+    orders = migrateOrders(orders);
+    orders = attachArtisanIdsToOrders(orders, artisans);
+    saveJSON(STORAGE_ORDERS, orders);
+    memOrders = orders;
+  }
+
+  function getProductById(pid) {
+    var products = getProducts();
+    for (var i = 0; i < products.length; i++) {
+      if (Number(products[i].id) === Number(pid)) return products[i];
+    }
+    return null;
+  }
+
+  function getProducts() {
+    return loadJSON(STORAGE_PRODUCTS, SEED_PRODUCTS);
+  }
+
+  // Use in-memory arrays so realtime updates can refresh UI without page reload.
+  var memArtisans = null;
+  var memOrders = null;
+
+  function getArtisans() {
+    if (memArtisans) return memArtisans;
+    memArtisans = loadJSON(STORAGE_ARTISANS, []);
+    return memArtisans;
+  }
+
+  function getOrders() {
+    if (memOrders) return memOrders;
+    memOrders = loadJSON(STORAGE_ORDERS, []);
+    return memOrders;
+  }
+
+  function setArtisans(arr) {
+    memArtisans = arr || [];
+    saveJSON(STORAGE_ARTISANS, memArtisans);
+    if (cloud.ready) {
+      cloudOverwriteCollection('artisans', memArtisans, function (a) { return a && a.id; });
+      cloudSetMeta({ updatedAt: new Date().toISOString() });
+    }
+  }
+
+  function setOrders(arr) {
+    memOrders = arr || [];
+    saveJSON(STORAGE_ORDERS, memOrders);
+    if (cloud.ready) {
+      cloudOverwriteCollection('orders', memOrders, function (o) { return o && o.id; });
+      cloudSetMeta({ updatedAt: new Date().toISOString() });
+    }
+  }
+
+  function formatMoney(n) {
+    return 'Rs ' + (Math.round(n * 100) / 100).toFixed(2);
+  }
+
+  function buildUpiUri(amount) {
+    var a = Number(amount);
+    if (isNaN(a) || a < 0) a = 0;
+    return (
+      'upi://pay?pa=' +
+      encodeURIComponent(UPI_ID) +
+      '&pn=' +
+      encodeURIComponent('Craft Link') +
+      '&am=' +
+      encodeURIComponent(a.toFixed(2)) +
+      '&cu=INR&tn=' +
+      encodeURIComponent('Craft Link order')
+    );
+  }
+
+  function qrUrlForData(data) {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(data);
+  }
+
+  var pendingPurchase = null;
+  var lastUpiUriForCopy = '';
+
+  function getSellerSessionArtisanId() {
+    try {
+      var raw = localStorage.getItem(STORAGE_SELLER_SESSION);
+      if (!raw) return '';
+      var o = JSON.parse(raw);
+      return o && o.artisanId ? String(o.artisanId) : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setSellerSessionArtisanId(artisanId) {
+    localStorage.setItem(STORAGE_SELLER_SESSION, JSON.stringify({ artisanId: artisanId }));
+  }
+
+  function clearSellerSession() {
+    localStorage.removeItem(STORAGE_SELLER_SESSION);
+  }
+
+  function findArtisanByCredentials(loginId, password) {
+    var key = normalizeLoc(loginId).replace(/\s/g, '');
+    if (!key) return null;
+    var artisans = getArtisans();
+    for (var i = 0; i < artisans.length; i++) {
+      var a = artisans[i];
+      var ak = (a.loginId || '').trim().toLowerCase().replace(/\s/g, '');
+      if (ak === key && a.password === password) return a;
+    }
+    return null;
+  }
+
+  function getArtisanById(id) {
+    if (!id) return null;
+    var artisans = getArtisans();
+    for (var i = 0; i < artisans.length; i++) {
+      if (artisans[i].id === id) return artisans[i];
+    }
+    return null;
+  }
+
+  function getArtisanForOrder(o) {
+    var artisans = getArtisans();
+    if (o.artisanId) {
+      var byId = getArtisanById(o.artisanId);
+      if (byId) return byId;
+    }
+    var ix = o.artisanIndex;
+    if (ix != null && ix >= 0 && artisans[ix]) return artisans[ix];
+    return null;
+  }
+
+  function ordersForArtisan(artisan) {
+    if (!artisan || !artisan.id) return [];
+    var id = artisan.id;
+    var artisans = getArtisans();
+    var idx = artisans.indexOf(artisan);
+    return getOrders().filter(function (o) {
+      if (o.artisanId && o.artisanId === id) return true;
+      if (idx >= 0 && o.artisanIndex === idx) return true;
+      return false;
+    });
+  }
+
+  function getAdminSession() {
+    return localStorage.getItem(STORAGE_ADMIN_SESSION) === '1';
+  }
+
+  function setAdminSession() {
+    localStorage.setItem(STORAGE_ADMIN_SESSION, '1');
+  }
+
+  function clearAdminSession() {
+    localStorage.removeItem(STORAGE_ADMIN_SESSION);
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function orderStatusLabel(o) {
+    if (o.artisanPaidOut) return { text: 'Paid by platform', cls: 'badge-done' };
+    if (o.delivered) return { text: 'Delivered, payout pending', cls: 'badge-pay' };
+    if (o.courierNumber) return { text: 'Shipped', cls: 'badge-ship' };
+    return { text: 'Awaiting ship', cls: 'badge-wait' };
+  }
+
+  function formatOrderDateTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleString(undefined, {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function readCheckoutQty() {
+    var el = document.getElementById('buyer-qty');
+    var q = parseInt(el && el.value, 10);
+    if (isNaN(q) || q < 1) q = 1;
+    return q;
+  }
+
+  function updateCheckoutPreview() {
+    if (!pendingPurchase) return;
+    var art = pendingPurchase.artisan;
+    var product = pendingPurchase.product;
+    var unit = Number(art.listingPrice) || 0;
+    var maxQ = Number(art.quantity) || 0;
+    var q = readCheckoutQty();
+    if (q > maxQ) {
+      q = maxQ;
+      document.getElementById('buyer-qty').value = String(q);
+    }
+    var lineTotal = unit * q;
+    var weightTotal = (Number(product.weightKg) || 0) * q;
+    var bd = (document.getElementById('buyer-district').value || '').trim();
+    var bs = document.getElementById('buyer-state').value;
+    var ship = computeShipping(art.district, art.state, bd, bs, weightTotal);
+    document.getElementById('chk-product-price').textContent = formatMoney(lineTotal) + ' (' + q + ' x ' + formatMoney(unit) + ')';
+    document.getElementById('chk-ship-band').textContent =
+      ship.bandLabel + ', base ' + formatMoney(ship.baseShipping);
+    document.getElementById('chk-weight-extra').textContent =
+      ship.weightSurcharge > 0 ? formatMoney(ship.weightSurcharge) : '-';
+    document.getElementById('chk-total').textContent = formatMoney(lineTotal + ship.shippingTotal);
+  }
+
+  function handlePurchase(artisanIndex, product) {
+    var artisans = getArtisans();
+    var art = artisans[artisanIndex];
+    if (!art) return;
+    var qtyAvail = Number(art.quantity) || 0;
+    if (qtyAvail <= 0) {
+      alert('This listing has no stock left.');
+      return;
+    }
+    if (!art.district || !art.state) {
+      alert('Seller address incomplete.');
+      return;
+    }
+    var unitPrice = Number(art.listingPrice) || 0;
+    if (unitPrice < 1) {
+      alert('Invalid listing price.');
+      return;
+    }
+    pendingPurchase = {
+      artisanIndex: artisanIndex,
+      product: product,
+      artisan: art,
+      artisanName: art.name,
+      unitPrice: unitPrice
+    };
+    document.getElementById('buyer-qty').value = '1';
+    document.getElementById('buyer-qty').max = String(qtyAvail);
+    document.getElementById('buyer-name').value = '';
+    document.getElementById('buyer-phone').value = '';
+    document.getElementById('buyer-door').value = '';
+    document.getElementById('buyer-street').value = '';
+    document.getElementById('buyer-district').value = '';
+    if (document.getElementById('buyer-state').options.length) {
+      document.getElementById('buyer-state').selectedIndex = 0;
+    }
+    document.getElementById('txn-id').value = '';
+    updateCheckoutPreview();
+    document.getElementById('checkout-modal').classList.add('open');
+  }
+
+  function proceedToPayment() {
+    if (!pendingPurchase) return;
+    var q = readCheckoutQty();
+    var art = pendingPurchase.artisan;
+    var maxQ = Number(art.quantity) || 0;
+    if (q < 1 || q > maxQ) {
+      alert('Quantity must be between 1 and ' + maxQ + '.');
+      return;
+    }
+    var bn = (document.getElementById('buyer-name').value || '').trim();
+    var bp = (document.getElementById('buyer-phone').value || '').replace(/\D/g, '');
+    var bd = (document.getElementById('buyer-door').value || '').trim();
+    var bst = (document.getElementById('buyer-street').value || '').trim();
+    var bdist = (document.getElementById('buyer-district').value || '').trim();
+    var bstate = document.getElementById('buyer-state').value;
+    var bcountry = (document.getElementById('buyer-country').value || 'India').trim();
+    if (!bn || bp.length < 10 || !bd || !bst || !bdist || !bstate) {
+      alert('Fill buyer name, phone (10+ digits), and full address.');
+      return;
+    }
+    if (normalizeLoc(bcountry) !== 'india') {
+      alert('India only.');
+      return;
+    }
+    var product = pendingPurchase.product;
+    var unit = Number(pendingPurchase.unitPrice) || 0;
+    var lineTotal = unit * q;
+    var weightTotal = (Number(product.weightKg) || 0) * q;
+    var ship = computeShipping(art.district, art.state, bdist, bstate, weightTotal);
+    var totalPaid = lineTotal + ship.shippingTotal;
+    pendingPurchase.buyer = {
+      name: bn,
+      phone: bp,
+      doorNo: bd,
+      street: bst,
+      district: bdist,
+      state: bstate,
+      country: bcountry
+    };
+    pendingPurchase.quantity = q;
+    pendingPurchase.lineTotal = lineTotal;
+    pendingPurchase.shipping = ship;
+    pendingPurchase.totalPaid = totalPaid;
+    pendingPurchase.weightTotal = weightTotal;
+
+    document.getElementById('checkout-modal').classList.remove('open');
+
+    var uri = buildUpiUri(totalPaid);
+    lastUpiUriForCopy = uri;
+    document.getElementById('pay-breakdown').innerHTML =
+      '<div><span>Items</span><span>' +
+      formatMoney(lineTotal) +
+      ' (' +
+      q +
+      ' x ' +
+      formatMoney(unit) +
+      ')</span></div>' +
+      '<div><span>Shipping</span><span>' +
+      formatMoney(ship.shippingTotal) +
+      '</span></div>' +
+      '<div class="total"><span>Pay via UPI</span><span>' +
+      formatMoney(totalPaid) +
+      '</span></div>';
+    document.getElementById('pay-upi-display').textContent = UPI_ID;
+    document.getElementById('pay-qr').src = qrUrlForData(uri);
+    document.getElementById('pay-qr').alt = 'UPI ' + formatMoney(totalPaid);
+    document.getElementById('txn-id').value = '';
+    document.getElementById('payment-modal').classList.add('open');
+  }
+
+  function confirmPaid() {
+    if (!pendingPurchase || !pendingPurchase.buyer) {
+      document.getElementById('payment-modal').classList.remove('open');
+      pendingPurchase = null;
+      return;
+    }
+    var txn = (document.getElementById('txn-id').value || '').trim();
+    if (!txn) {
+      alert('Enter your UPI transaction ID / reference.');
+      return;
+    }
+    var artisans = getArtisans();
+    var idx = pendingPurchase.artisanIndex;
+    var art = artisans[idx];
+    var q = pendingPurchase.quantity || 1;
+    if (!art || (Number(art.quantity) || 0) < q) {
+      document.getElementById('payment-modal').classList.remove('open');
+      pendingPurchase = null;
+      alert('Stock changed - try again.');
+      renderProducts();
+      return;
+    }
+    var product = pendingPurchase.product;
+    var lineTotal = pendingPurchase.lineTotal;
+    var ship = pendingPurchase.shipping;
+    var buyer = pendingPurchase.buyer;
+    var commission = Math.round(lineTotal * 0.05 * 100) / 100;
+    var artisanItemsEarning = Math.round(lineTotal * 0.95 * 100) / 100;
+    var artisanPayout = artisanItemsEarning + ship.shippingTotal;
+    var shipOnly =
+      'Qty: ' +
+      q +
+      '\n' +
+      'Phone: ' +
+      buyer.phone +
+      '\n' +
+      formatAddressLines(buyer.doorNo, buyer.street, buyer.district, buyer.state, buyer.country);
+
+    var order = {
+      id: generateOrderId(),
+      date: new Date().toISOString(),
+      productName: product.name,
+      artisanName: pendingPurchase.artisanName,
+      artisanIndex: idx,
+      artisanId: art.id || '',
+      quantity: q,
+      unitPrice: pendingPurchase.unitPrice,
+      price: lineTotal,
+      shipping: ship.shippingTotal,
+      baseShipping: ship.baseShipping,
+      weightSurcharge: ship.weightSurcharge,
+      totalPaid: pendingPurchase.totalPaid,
+      commission: commission,
+      artisanItemsEarning: artisanItemsEarning,
+      // Seller reimbursement: items payout (95%) + shipping they paid.
+      artisanEarning: artisanPayout,
+      productWeightKg: pendingPurchase.weightTotal,
+      transactionId: txn,
+      buyerName: buyer.name,
+      buyerPhone: buyer.phone,
+      buyerDoor: buyer.doorNo,
+      buyerStreet: buyer.street,
+      buyerDistrict: buyer.district,
+      buyerState: buyer.state,
+      buyerCountry: buyer.country,
+      shipToAddressOnly: shipOnly,
+      courierNumber: '',
+      delivered: false,
+      artisanPaidOut: false
+    };
+
+    var orders = getOrders();
+    orders.push(order);
+    setOrders(orders);
+
+    art.quantity = (Number(art.quantity) || 0) - q;
+    artisans[idx] = art;
+    setArtisans(artisans);
+
+    document.getElementById('payment-modal').classList.remove('open');
+    document.getElementById('success-msg').textContent =
+      'Order ' + order.id + ' placed. Transaction ref: ' + txn + '. Admin will verify and notify the seller.';
+    document.getElementById('success-modal').classList.add('open');
+    pendingPurchase = null;
+
+    renderProducts();
+    updateDashboard();
+    renderSellerHub();
+  }
+
+  function renderSellerHub() {
+    var box = document.getElementById('seller-hub-orders');
+    if (!box) return;
+    updateSellerViewPanels();
+    var sessionId = getSellerSessionArtisanId();
+    var artisan = sessionId ? getArtisanById(sessionId) : null;
+    box.innerHTML = '';
+    if (!artisan || !artisan.loginId) return;
+    var mine = ordersForArtisan(artisan);
+    if (!mine.length) {
+      box.innerHTML =
+        '<p class="empty-hint">No orders yet.</p>';
+      return;
+    }
+    mine
+      .slice()
+      .sort(function (a, b) {
+        return new Date(b.date) - new Date(a.date);
+      })
+      .forEach(function (o) {
+        var st = orderStatusLabel(o);
+        var card = document.createElement('div');
+        card.className = 'seller-order-card';
+        var shippingPart = Number(o.shipping) || 0;
+        var itemsPart =
+          o.artisanItemsEarning != null
+            ? Number(o.artisanItemsEarning)
+            : Math.max(0, Number(o.artisanEarning) - shippingPart);
+        var totalPart = Number(o.artisanEarning) || 0;
+        var payoutLine = o.artisanPaidOut
+          ? 'Recorded payout: ' +
+            formatMoney(totalPart) +
+            ' (Items ' +
+            formatMoney(itemsPart) +
+            ' + Shipping ' +
+            formatMoney(shippingPart) +
+            ').'
+          : 'Your payout after delivery: ' +
+            formatMoney(totalPart) +
+            ' (Items ' +
+            formatMoney(itemsPart) +
+            ' + Shipping ' +
+            formatMoney(shippingPart) +
+            ').';
+        card.innerHTML =
+          '<h4>' +
+          escapeHtml(o.productName) +
+          '</h4>' +
+          '<p style="margin:0 0 0.35rem;font-size:0.78rem;color:var(--muted);"><strong>Order</strong> ' +
+          escapeHtml(o.id) +
+          '</p>' +
+          '<p style="margin:0 0 0.5rem;font-size:0.82rem;"><strong>Placed:</strong> ' +
+          escapeHtml(formatOrderDateTime(o.date)) +
+          '</p>' +
+          '<p style="margin:0 0 0.35rem;font-size:0.72rem;color:var(--muted);">Quantity &amp; ship-to (includes customer phone)</p>' +
+          '<div class="address-block">' +
+          escapeHtml(o.shipToAddressOnly || '-') +
+          '</div>' +
+          '<p style="margin:0.5rem 0 0;font-size:0.78rem;"><span class="badge ' +
+          st.cls +
+          '">' +
+          st.text +
+          '</span></p>' +
+          '<p style="margin:0.45rem 0 0;font-size:0.78rem;color:var(--muted);">' +
+          escapeHtml(payoutLine) +
+          '</p>';
+        var wrap = document.createElement('div');
+        wrap.style.marginTop = '0.65rem';
+        var lab = document.createElement('label');
+        lab.style.cssText = 'display:block;font-size:0.72rem;font-weight:600;margin-bottom:0.25rem';
+        lab.textContent = 'India Post tracking';
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = o.courierNumber || '';
+        inp.style.cssText = 'width:100%;padding:0.5rem;margin-bottom:0.45rem;border-radius:8px;border:1px solid var(--border)';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = o.courierNumber ? 'Update tracking' : 'Submit tracking';
+        btn.addEventListener('click', function () {
+          var v = (inp.value || '').trim();
+          if (!v) {
+            alert('Enter tracking number.');
+            return;
+          }
+          var all = getOrders();
+          var found = all.filter(function (x) {
+            return x.id === o.id;
+          })[0];
+          if (found) {
+            found.courierNumber = v;
+            setOrders(all);
+            renderSellerHub();
+            updateDashboard();
+          }
+        });
+        wrap.appendChild(lab);
+        wrap.appendChild(inp);
+        wrap.appendChild(btn);
+        card.appendChild(wrap);
+        box.appendChild(card);
+      });
+  }
+
+  function updateSellerViewPanels() {
+    var sessionId = getSellerSessionArtisanId();
+    var artisan = sessionId ? getArtisanById(sessionId) : null;
+    var loginWrap = document.getElementById('seller-login-wrap');
+    var dashWrap = document.getElementById('seller-dashboard-wrap');
+    if (!loginWrap || !dashWrap) return;
+    if (artisan && artisan.loginId && artisan.password) {
+      loginWrap.style.display = 'none';
+      dashWrap.style.display = 'block';
+      document.getElementById('seller-session-greeting').textContent =
+        artisan.name + (artisan.phone ? ' - ' + artisan.phone : '');
+    } else {
+      clearSellerSession();
+      loginWrap.style.display = 'block';
+      dashWrap.style.display = 'none';
+    }
+  }
+
+  function updateAdminLayout() {
+    var loginWrap = document.getElementById('admin-login-wrap');
+    var dashWrap = document.getElementById('admin-dashboard-wrap');
+    if (!loginWrap || !dashWrap) return;
+    if (getAdminSession()) {
+      loginWrap.style.display = 'none';
+      dashWrap.style.display = 'block';
+    } else {
+      loginWrap.style.display = 'block';
+      dashWrap.style.display = 'none';
+    }
+  }
+
+  function populateAdminProductSelect(selectEl, preferValue) {
+    if (!selectEl) return;
+    var had = preferValue != null ? String(preferValue) : selectEl.value;
+    selectEl.innerHTML = '';
+    getProducts().forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = String(p.id);
+      opt.textContent = p.name + ' - ' + (p.category || 'Handmade');
+      selectEl.appendChild(opt);
+    });
+    if (had && selectEl.querySelector('option[value="' + had + '"]')) selectEl.value = had;
+  }
+
+  function ensureAdminStateSelect() {
+    var sel = document.getElementById('adm-art-state');
+    if (!sel || sel.getAttribute('data-states-filled')) return;
+    sel.setAttribute('data-states-filled', '1');
+    INDIAN_STATES.forEach(function (st) {
+      var opt = document.createElement('option');
+      opt.value = st;
+      opt.textContent = st;
+      sel.appendChild(opt);
+    });
+  }
+
+  function closeAdminArtisanModal() {
+    document.getElementById('admin-artisan-modal').classList.remove('open');
+  }
+
+  function openAdminArtisanModal(index) {
+    ensureAdminStateSelect();
+    populateAdminProductSelect(document.getElementById('adm-art-product'), null);
+    document.getElementById('adm-modal-title').textContent = index < 0 ? 'Add seller' : 'Edit seller';
+    document.getElementById('adm-art-edit-index').value = String(index);
+    if (index < 0) {
+      document.getElementById('adm-art-id').value = '';
+      document.getElementById('adm-art-name').value = '';
+      document.getElementById('adm-art-phone').value = '';
+      document.getElementById('adm-art-login').value = '';
+      document.getElementById('adm-art-pass').value = '';
+      document.getElementById('adm-art-pass').placeholder = 'Min 4 characters';
+      document.getElementById('adm-art-product').selectedIndex = 0;
+      document.getElementById('adm-art-price').value = '299';
+      document.getElementById('adm-art-qty').value = '1';
+      document.getElementById('adm-art-door').value = '';
+      document.getElementById('adm-art-street').value = '';
+      document.getElementById('adm-art-district').value = '';
+      document.getElementById('adm-art-state').value = INDIAN_STATES[0];
+    } else {
+      var a = getArtisans()[index];
+      document.getElementById('adm-art-id').value = a.id;
+      document.getElementById('adm-art-name').value = a.name;
+      document.getElementById('adm-art-phone').value = a.phone || '';
+      document.getElementById('adm-art-login').value = a.loginId || '';
+      document.getElementById('adm-art-pass').value = '';
+      document.getElementById('adm-art-pass').placeholder = 'Leave blank to keep';
+      populateAdminProductSelect(document.getElementById('adm-art-product'), a.productId);
+      document.getElementById('adm-art-price').value = String(Number(a.listingPrice) || 299);
+      document.getElementById('adm-art-qty').value = String(a.quantity != null ? a.quantity : 0);
+      document.getElementById('adm-art-door').value = a.doorNo || '';
+      document.getElementById('adm-art-street').value = a.street || '';
+      document.getElementById('adm-art-district').value = a.district || '';
+      document.getElementById('adm-art-state').value = a.state || INDIAN_STATES[0];
+    }
+    document.getElementById('admin-artisan-modal').classList.add('open');
+  }
+
+  function saveAdminArtisanFromForm() {
+    var ix = parseInt(document.getElementById('adm-art-edit-index').value, 10);
+    var artisans = getArtisans();
+    var name = (document.getElementById('adm-art-name').value || '').trim();
+    var phone = (document.getElementById('adm-art-phone').value || '').replace(/\D/g, '');
+    var loginId = (document.getElementById('adm-art-login').value || '').trim().toLowerCase().replace(/\s/g, '');
+    var pass = document.getElementById('adm-art-pass').value;
+    var productId = Number(document.getElementById('adm-art-product').value);
+    var listingPrice = parseFloat(document.getElementById('adm-art-price').value);
+    var qty = parseInt(document.getElementById('adm-art-qty').value, 10);
+    var door = (document.getElementById('adm-art-door').value || '').trim();
+    var street = (document.getElementById('adm-art-street').value || '').trim();
+    var district = (document.getElementById('adm-art-district').value || '').trim();
+    var state = document.getElementById('adm-art-state').value;
+    var country = (document.getElementById('adm-art-country').value || 'India').trim();
+    if (!name || phone.length < 10) {
+      alert('Name and 10-digit mobile required.');
+      return;
+    }
+    if (!loginId || loginId.length < 3) {
+      alert('Login ID at least 3 characters.');
+      return;
+    }
+    if (!productId || isNaN(productId)) {
+      alert('Choose a product.');
+      return;
+    }
+    if (!listingPrice || listingPrice < 1) {
+      alert('Valid price required.');
+      return;
+    }
+    if (qty < 0 || isNaN(qty)) {
+      alert('Valid quantity.');
+      return;
+    }
+    if (!door || !street || !district || !state) {
+      alert('Complete address.');
+      return;
+    }
+    for (var j = 0; j < artisans.length; j++) {
+      if (j === ix) continue;
+      if ((artisans[j].loginId || '').trim().toLowerCase().replace(/\s/g, '') === loginId) {
+        alert('Login ID already used.');
+        return;
+      }
+    }
+    var row;
+    if (ix < 0) {
+      if (!pass || pass.length < 4) {
+        alert('Password min 4 characters for new seller.');
+        return;
+      }
+      row = {
+        id: generateSellerId(),
+        loginId: loginId,
+        password: pass,
+        phone: phone,
+        name: name,
+        productId: productId,
+        listingPrice: Math.round(listingPrice * 100) / 100,
+        quantity: qty,
+        doorNo: door,
+        street: street,
+        district: district,
+        state: state,
+        country: country
+      };
+      artisans.push(row);
+    } else {
+      var prev = artisans[ix];
+      if (!prev) return;
+      row = {
+        id: prev.id,
+        loginId: loginId,
+        password: pass ? pass : prev.password,
+        phone: phone,
+        name: name,
+        productId: productId,
+        listingPrice: Math.round(listingPrice * 100) / 100,
+        quantity: qty,
+        doorNo: door,
+        street: street,
+        district: district,
+        state: state,
+        country: country
+      };
+      if (!row.password) {
+        alert('Seller needs a password.');
+        return;
+      }
+      artisans[ix] = row;
+    }
+    setArtisans(artisans);
+    closeAdminArtisanModal();
+    renderProducts();
+    renderAdminArtisansTable();
+    updateDashboard();
+    renderSellerHub();
+  }
+
+  function renderAdminArtisansTable() {
+    if (!getAdminSession()) return;
+    var tbody = document.getElementById('admin-artisans-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    getArtisans().forEach(function (a, i) {
+      var tr = document.createElement('tr');
+      var prod = getProductById(a.productId);
+      var pname = prod ? prod.name : '-';
+      tr.innerHTML =
+        '<td>' +
+        escapeHtml(a.name) +
+        '</td><td><code style="font-size:0.72rem">' +
+        escapeHtml(a.loginId || '-') +
+        '</code></td><td>' +
+        escapeHtml(a.phone || '-') +
+        '</td><td style="font-size:0.72rem;max-width:8rem">' +
+        escapeHtml(pname) +
+        '</td><td>' +
+        formatMoney(Number(a.listingPrice) || 0) +
+        '</td><td>' +
+        (a.quantity != null ? a.quantity : 0) +
+        '</td><td></td>';
+      var td = tr.querySelector('td:last-child');
+      var b1 = document.createElement('button');
+      b1.type = 'button';
+      b1.className = 'btn btn-small btn-secondary';
+      b1.textContent = 'Edit';
+      b1.addEventListener(
+        'click',
+        (function (idx) {
+          return function () {
+            openAdminArtisanModal(idx);
+          };
+        })(i)
+      );
+      var b2 = document.createElement('button');
+      b2.type = 'button';
+      b2.className = 'btn btn-small btn-danger';
+      b2.style.marginLeft = '0.2rem';
+      b2.textContent = 'Remove';
+      b2.addEventListener(
+        'click',
+        (function (idx, aname) {
+          return function () {
+            if (!confirm('Remove seller ' + aname + '?')) return;
+            var arr = getArtisans();
+            arr.splice(idx, 1);
+            setArtisans(arr);
+            renderProducts();
+            renderAdminArtisansTable();
+            updateDashboard();
+            renderSellerHub();
+          };
+        })(i, a.name)
+      );
+      td.appendChild(b1);
+      td.appendChild(b2);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function fillStateSelects() {
+    ['seller-state', 'buyer-state'].forEach(function (id) {
+      var sel = document.getElementById(id);
+      if (!sel || sel.getAttribute('data-states-filled')) return;
+      sel.setAttribute('data-states-filled', '1');
+      INDIAN_STATES.forEach(function (st) {
+        var opt = document.createElement('option');
+        opt.value = st;
+        opt.textContent = st;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        if (document.execCommand('copy')) resolve();
+        else reject(new Error('copy'));
+      } catch (e) {
+        reject(e);
+      }
+      document.body.removeChild(ta);
+    });
+  }
+
+  function flashCopyBtn(btn, ok) {
+    if (!btn) return;
+    var t = btn.textContent;
+    btn.textContent = ok ? 'Copied!' : 'Failed';
+    setTimeout(function () {
+      btn.textContent = t;
+    }, 1500);
+  }
+
+  function showView(viewId) {
+    document.querySelectorAll('.view').forEach(function (el) {
+      el.classList.remove('active');
+    });
+    var v = document.getElementById('view-' + viewId);
+    if (v) v.classList.add('active');
+    document.querySelectorAll('.nav-tabs button').forEach(function (btn) {
+      var on = btn.getAttribute('data-view') === viewId;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if (viewId === 'admin') {
+      updateAdminLayout();
+      if (getAdminSession()) updateDashboard();
+    }
+    if (viewId === 'seller') {
+      updateSellerViewPanels();
+      renderSellerHub();
+    }
+  }
+
+  function populateProductDropdown() {
+    var sel = document.getElementById('artisan-product');
+    if (!sel) return;
+    var had = sel.value;
+    sel.innerHTML = '';
+    getProducts().forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = String(p.id);
+      opt.textContent = p.name + ' - ' + (p.category || 'Handmade');
+      sel.appendChild(opt);
+    });
+    if (had) sel.value = had;
+  }
+
+  function renderProducts() {
+    var grid = document.getElementById('product-grid');
+    if (!grid) return;
+    var products = getProducts();
+    var artisans = getArtisans();
+    grid.innerHTML = '';
+    products.forEach(function (product) {
+      var offering = artisans.filter(function (a) {
+        return Number(a.productId) === Number(product.id);
+      });
+      var card = document.createElement('article');
+      card.className = 'product-card';
+      var wkg = Number(product.weightKg) || 0;
+      var cat = product.category || 'Handmade';
+      card.innerHTML =
+        '<div class="img-wrap"><img src="' +
+        product.image.replace(/"/g, '&quot;') +
+        '" alt="" loading="lazy" /></div>' +
+        '<div class="product-card-body">' +
+        '<span class="cat-pill">' +
+        escapeHtml(cat) +
+        '</span><h3>' +
+        escapeHtml(product.name) +
+        '</h3>' +
+        '<p class="meta-line">Weight ' +
+        wkg +
+        '. Shipping from Rs ' +
+        SHIP_SAME_DISTRICT +
+        ' (same district).</p><ul class="artisan-list"></ul></div>';
+      grid.appendChild(card);
+      var list = card.querySelector('.artisan-list');
+      if (!offering.length) {
+        var p = document.createElement('p');
+        p.className = 'empty-hint';
+        p.textContent = 'No sellers yet - register to list this craft.';
+        list.appendChild(p);
+      } else {
+        offering.forEach(function (art) {
+          var realIndex = artisans.indexOf(art);
+          var li = document.createElement('li');
+          var qty = Number(art.quantity) || 0;
+          var lp = Number(art.listingPrice) || 0;
+          var disabled = qty <= 0 || lp < 1;
+          var addrOk = art.district && art.state;
+          var portalOk = art.loginId && art.password;
+          if (!addrOk || !portalOk) disabled = true;
+          var sub = !portalOk
+            ? 'Login missing'
+            : !addrOk
+              ? 'Address incomplete'
+              : formatMoney(lp) + ' per unit, Qty ' + qty;
+          li.innerHTML =
+            '<span>' +
+            escapeHtml(art.name) +
+            ' <span class="qty-badge">' +
+            sub +
+            '</span></span>';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-primary';
+          btn.textContent = 'Buy';
+          btn.disabled = disabled;
+          btn.addEventListener('click', function () {
+            handlePurchase(realIndex, product);
+          });
+          li.appendChild(btn);
+          list.appendChild(li);
+        });
+      }
+    });
+    populateProductDropdown();
+  }
+
+  function addArtisan() {
+    var name = (document.getElementById('artisan-name').value || '').trim();
+    var phone = (document.getElementById('seller-phone').value || '').replace(/\D/g, '');
+    var productId = Number(document.getElementById('artisan-product').value);
+    var qty = parseInt(document.getElementById('artisan-qty').value, 10);
+    var loginId = (document.getElementById('seller-loginid-reg').value || '').trim().toLowerCase().replace(/\s/g, '');
+    var pass = document.getElementById('seller-password-reg').value;
+    var pass2 = document.getElementById('seller-password-confirm').value;
+    var door = (document.getElementById('seller-door').value || '').trim();
+    var street = (document.getElementById('seller-street').value || '').trim();
+    var district = (document.getElementById('seller-district').value || '').trim();
+    var state = document.getElementById('seller-state').value;
+    var country = (document.getElementById('seller-country').value || 'India').trim();
+    var toast = document.getElementById('register-toast');
+    toast.className = 'toast';
+    toast.textContent = '';
+    if (!name || phone.length < 10) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Enter name and valid mobile.';
+      return;
+    }
+    if (!productId || isNaN(productId)) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Choose a product.';
+      return;
+    }
+    if (!qty || qty < 1) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Valid stock quantity.';
+      return;
+    }
+    var listingPrice = parseFloat(document.getElementById('seller-listing-price').value);
+    if (!listingPrice || listingPrice < 1) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Enter price per unit in Rs.';
+      return;
+    }
+    if (!loginId || loginId.length < 3) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Login ID min 3 characters.';
+      return;
+    }
+    if (!pass || pass.length < 4 || pass !== pass2) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Passwords must match (min 4).';
+      return;
+    }
+    if (!door || !street || !district || !state) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Complete dispatch address.';
+      return;
+    }
+    if (normalizeLoc(country) !== 'india') {
+      toast.className = 'toast error show';
+      toast.textContent = 'Country must be India.';
+      return;
+    }
+    var artisans = getArtisans();
+    for (var i = 0; i < artisans.length; i++) {
+      if ((artisans[i].loginId || '').trim().toLowerCase().replace(/\s/g, '') === loginId) {
+        toast.className = 'toast error show';
+        toast.textContent = 'Login ID taken.';
+        return;
+      }
+    }
+    artisans.push({
+      id: generateSellerId(),
+      loginId: loginId,
+      password: pass,
+      phone: phone,
+      name: name,
+      productId: productId,
+      listingPrice: Math.round(listingPrice * 100) / 100,
+      quantity: qty,
+      doorNo: door,
+      street: street,
+      district: district,
+      state: state,
+      country: country
+    });
+    setArtisans(artisans);
+    toast.className = 'toast success show';
+    toast.textContent = 'Saved. Login ID: ' + loginId + '.';
+    document.getElementById('artisan-form').reset();
+    document.getElementById('artisan-qty').value = '1';
+    document.getElementById('seller-country').value = 'India';
+    renderProducts();
+    updateDashboard();
+    renderSellerHub();
+  }
+
+  function updateDashboard() {
+    var orders = getOrders();
+    var totalUpi = 0;
+    var totalPlatform = 0;
+    var totalPayout = 0;
+    orders.forEach(function (o) {
+      totalUpi += Number(o.totalPaid) || 0;
+      totalPlatform += Number(o.commission) || 0;
+      totalPayout += Number(o.artisanEarning) || 0;
+    });
+    document.getElementById('d-total-orders').textContent = String(orders.length);
+    document.getElementById('d-total-upi').textContent = formatMoney(totalUpi);
+    document.getElementById('d-platform').textContent = formatMoney(totalPlatform);
+    document.getElementById('d-payout').textContent = formatMoney(totalPayout);
+
+    var tbody = document.getElementById('platform-orders-body');
+    tbody.innerHTML = '';
+    orders
+      .slice()
+      .sort(function (a, b) {
+        return new Date(b.date) - new Date(a.date);
+      })
+      .forEach(function (o) {
+        var tr = document.createElement('tr');
+        var d = new Date(o.date);
+        var sav = getArtisanForOrder(o);
+        var sellerCell =
+          sav != null
+            ? escapeHtml(sav.name) +
+              '<br><small>' +
+              escapeHtml(sav.phone || '-') +
+              '</small><br><small style="color:var(--muted)">' +
+              escapeHtml((sav.district || '') + ', ' + (sav.state || '')) +
+              '</small>'
+            : escapeHtml(o.artisanName);
+        tr.innerHTML =
+          '<td><strong>' +
+          escapeHtml(o.id) +
+          '</strong><br><span style="color:var(--muted);font-size:0.7rem">' +
+          escapeHtml(d.toLocaleString()) +
+          '</span><br>' +
+          escapeHtml(o.productName) +
+          ' x ' +
+          (o.quantity || 1) +
+          '</td><td>' +
+          sellerCell +
+          '</td><td>' +
+          escapeHtml(o.buyerName) +
+          '<br><small>' +
+          escapeHtml(o.buyerPhone) +
+          '</small></td><td><small style="word-break:break-all">' +
+          escapeHtml(o.transactionId || '-') +
+          '</small></td><td style="white-space:pre-wrap;font-size:0.72rem">' +
+          escapeHtml(
+            formatAddressLines(o.buyerDoor, o.buyerStreet, o.buyerDistrict, o.buyerState, o.buyerCountry)
+          ) +
+          '</td><td>' +
+          formatMoney(o.totalPaid) +
+          '<br><small style="color:var(--muted)">Items ' +
+          formatMoney(o.price) +
+          '</small></td><td><small>' +
+          escapeHtml(o.courierNumber || '-') +
+          '</small></td><td></td>';
+        var tdAct = tr.querySelector('td:last-child');
+        var b1 = document.createElement('button');
+        b1.type = 'button';
+        b1.className = 'btn btn-small btn-secondary';
+        b1.textContent = o.delivered ? 'Delivered' : 'Mark delivered';
+        b1.disabled = !!o.delivered;
+        b1.addEventListener('click', function () {
+          var all = getOrders();
+          var x = all.filter(function (z) {
+            return z.id === o.id;
+          })[0];
+          if (x) {
+            x.delivered = true;
+            setOrders(all);
+            updateDashboard();
+            renderSellerHub();
+          }
+        });
+        var b2 = document.createElement('button');
+        b2.type = 'button';
+        b2.className = 'btn btn-small btn-primary';
+        b2.style.marginTop = '0.25rem';
+        b2.textContent = o.artisanPaidOut ? 'Paid' : 'Mark artisan paid';
+        b2.disabled = !o.delivered || !!o.artisanPaidOut;
+        b2.addEventListener('click', function () {
+          var all = getOrders();
+          var x = all.filter(function (z) {
+            return z.id === o.id;
+          })[0];
+          if (x && x.delivered) {
+            x.artisanPaidOut = true;
+            setOrders(all);
+            updateDashboard();
+            renderSellerHub();
+          }
+        });
+        tdAct.appendChild(b1);
+        tdAct.appendChild(document.createElement('br'));
+        tdAct.appendChild(b2);
+        tbody.appendChild(tr);
+      });
+
+    var namesSet = {};
+    getArtisans().forEach(function (a) {
+      namesSet[a.name] = true;
+    });
+    orders.forEach(function (o) {
+      namesSet[o.artisanName] = true;
+    });
+    var names = Object.keys(namesSet).sort();
+    var artisanSelect = document.getElementById('dash-artisan-select');
+    var currentVal = artisanSelect.value;
+    artisanSelect.innerHTML = '<option value="">- Select an artisan -</option>';
+    names.forEach(function (n) {
+      var opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = n;
+      artisanSelect.appendChild(opt);
+    });
+    if (names.indexOf(currentVal) !== -1) artisanSelect.value = currentVal;
+
+    var selected = artisanSelect.value;
+    var summaryEl = document.getElementById('artisan-summary');
+    var artBody = document.querySelector('#artisan-tx-table tbody');
+    artBody.innerHTML = '';
+    if (!selected) {
+      summaryEl.textContent = 'Select an artisan.';
+    } else {
+      var mine = orders.filter(function (o) {
+        return o.artisanName === selected;
+      });
+      var earn = 0;
+      mine.forEach(function (o) {
+        earn += Number(o.artisanEarning) || 0;
+      });
+      summaryEl.textContent =
+        'Orders: ' +
+        mine.length +
+        ' - Booked artisan payout total: ' +
+        formatMoney(earn);
+      mine
+        .slice()
+        .sort(function (a, b) {
+          return new Date(b.date) - new Date(a.date);
+        })
+        .forEach(function (o) {
+          var tr = document.createElement('tr');
+          var d = new Date(o.date);
+          var st = orderStatusLabel(o);
+          tr.innerHTML =
+            '<td>' +
+            escapeHtml(d.toLocaleDateString()) +
+            '</td><td>' +
+            escapeHtml(o.productName) +
+            '</td><td>' +
+            (o.quantity || 1) +
+            '</td><td>' +
+            formatMoney(o.price) +
+            '</td><td>' +
+            formatMoney(o.artisanEarning) +
+            '</td><td><span class="badge ' +
+            st.cls +
+            '">' +
+            st.text +
+            '</span></td><td><small style="word-break:break-all">' +
+            escapeHtml(o.transactionId || '-') +
+            '</small></td>';
+          artBody.appendChild(tr);
+        });
+    }
+
+    var productCounts = {};
+    orders.forEach(function (o) {
+      productCounts[o.productName] = (productCounts[o.productName] || 0) + (o.quantity || 1);
+    });
+    var analyticsEl = document.getElementById('product-analytics');
+    analyticsEl.innerHTML = '';
+    var entries = getProducts().map(function (p) {
+      return { name: p.name, count: productCounts[p.name] || 0 };
+    });
+    var maxCount = 0;
+    entries.forEach(function (e) {
+      if (e.count > maxCount) maxCount = e.count;
+    });
+    entries
+      .slice()
+      .sort(function (a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.name.localeCompare(b.name);
+      })
+      .forEach(function (e) {
+        var li = document.createElement('li');
+        if (maxCount > 0 && e.count === maxCount) li.classList.add('top');
+        li.innerHTML =
+          '<span>' + escapeHtml(e.name) + '</span><span>' + e.count + ' units sold</span>';
+        analyticsEl.appendChild(li);
+      });
+
+    renderAdminArtisansTable();
+  }
+
+  function resetAllSellersAndOrders() {
+    saveJSON(STORAGE_ARTISANS, []);
+    saveJSON(STORAGE_ORDERS, []);
+    memArtisans = [];
+    memOrders = [];
+    clearSellerSession();
+    clearAdminSession();
+    pendingPurchase = null;
+    document.getElementById('checkout-modal').classList.remove('open');
+    document.getElementById('payment-modal').classList.remove('open');
+    if (cloud.ready) {
+      cloudOverwriteCollection('artisans', [], function (a) { return a && a.id; });
+      cloudOverwriteCollection('orders', [], function (o) { return o && o.id; });
+      cloudSetMeta({ updatedAt: new Date().toISOString() });
+    }
+    updateSellerViewPanels();
+    updateAdminLayout();
+    renderProducts();
+    updateDashboard();
+    renderSellerHub();
+  }
+
+  function refreshAllViews() {
+    // Keep UI consistent when cloud pushes changes from another device.
+    renderProducts();
+    updateDashboard();
+    renderSellerHub();
+  }
+
+  function cloudBootstrap() {
+    cloudEnable();
+    if (!cloud.enabled) return Promise.resolve(false);
+    return cloudSignIn().then(function (ok) {
+      if (!ok) return false;
+      cloud.ready = true;
+      // Realtime listeners
+      if (cloud.unsubArtisans) cloud.unsubArtisans();
+      if (cloud.unsubOrders) cloud.unsubOrders();
+      cloud.unsubArtisans = cloudListen('artisans', function (arr) {
+        memArtisans = arr || [];
+        saveJSON(STORAGE_ARTISANS, memArtisans);
+        refreshAllViews();
+      });
+      cloud.unsubOrders = cloudListen('orders', function (arr) {
+        memOrders = arr || [];
+        saveJSON(STORAGE_ORDERS, memOrders);
+        refreshAllViews();
+      });
+
+      // One-time seed logic: if cloud empty but local has data, upload local.
+      return Promise.all([cloudGetAll('artisans'), cloudGetAll('orders'), cloudGetMeta()]).then(function (res) {
+        var cloudArts = res[0] || [];
+        var cloudOrds = res[1] || [];
+        var meta = res[2] || {};
+
+        var localArts = getArtisans();
+        var localOrds = getOrders();
+
+        var cloudEmpty = cloudArts.length === 0 && cloudOrds.length === 0 && !meta.updatedAt;
+        if (cloudEmpty && (localArts.length || localOrds.length)) {
+          cloudOverwriteCollection('artisans', localArts, function (a) { return a && a.id; });
+          cloudOverwriteCollection('orders', localOrds, function (o) { return o && o.id; });
+          cloudSetMeta({ updatedAt: new Date().toISOString(), seededFrom: 'local' });
+        }
+        return true;
+      });
+    });
+  }
+
+  document.getElementById('footer-motto').textContent = MOTTO;
+
+  document.querySelectorAll('.nav-tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      showView(btn.getAttribute('data-view'));
+    });
+  });
+
+  document.getElementById('artisan-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    addArtisan();
+  });
+
+  ['buyer-district', 'buyer-state', 'buyer-qty'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', updateCheckoutPreview);
+      el.addEventListener('input', updateCheckoutPreview);
+    }
+  });
+
+  document.getElementById('checkout-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    proceedToPayment();
+  });
+
+  document.getElementById('btn-checkout-cancel').addEventListener('click', function () {
+    document.getElementById('checkout-modal').classList.remove('open');
+    pendingPurchase = null;
+  });
+
+  document.getElementById('btn-cancel-pay').addEventListener('click', function () {
+    document.getElementById('payment-modal').classList.remove('open');
+    pendingPurchase = null;
+  });
+
+  document.getElementById('btn-copy-upi').addEventListener('click', function () {
+    var btn = document.getElementById('btn-copy-upi');
+    copyToClipboard(UPI_ID).then(
+      function () {
+        flashCopyBtn(btn, true);
+      },
+      function () {
+        flashCopyBtn(btn, false);
+      }
+    );
+  });
+
+  document.getElementById('btn-copy-upi-link').addEventListener('click', function () {
+    var btn = document.getElementById('btn-copy-upi-link');
+    copyToClipboard(lastUpiUriForCopy || buildUpiUri(0)).then(
+      function () {
+        flashCopyBtn(btn, true);
+      },
+      function () {
+        flashCopyBtn(btn, false);
+      }
+    );
+  });
+
+  document.getElementById('btn-paid').addEventListener('click', confirmPaid);
+
+  document.getElementById('btn-success-ok').addEventListener('click', function () {
+    document.getElementById('success-modal').classList.remove('open');
+  });
+
+  document.getElementById('dash-artisan-select').addEventListener('change', updateDashboard);
+
+  document.getElementById('seller-login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var lid = (document.getElementById('seller-login-id').value || '').trim();
+    var pw = document.getElementById('seller-login-password').value;
+    var toast = document.getElementById('seller-login-toast');
+    toast.className = 'toast';
+    toast.textContent = '';
+    var artisan = findArtisanByCredentials(lid, pw);
+    if (!artisan) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Wrong Login ID or password.';
+      return;
+    }
+    setSellerSessionArtisanId(artisan.id);
+    document.getElementById('seller-login-password').value = '';
+    updateSellerViewPanels();
+    renderSellerHub();
+  });
+
+  document.getElementById('btn-seller-logout').addEventListener('click', function () {
+    clearSellerSession();
+    document.getElementById('seller-login-password').value = '';
+    updateSellerViewPanels();
+    renderSellerHub();
+  });
+
+  document.getElementById('btn-seller-refill').addEventListener('click', function () {
+    var sessionId = getSellerSessionArtisanId();
+    var artisan = sessionId ? getArtisanById(sessionId) : null;
+    if (!artisan) return;
+    var add = window.prompt('How many units to add to stock?', '10');
+    if (add === null) return;
+    var n = parseInt(add, 10);
+    if (isNaN(n) || n < 1) {
+      alert('Enter a positive whole number.');
+      return;
+    }
+    var artisans = getArtisans();
+    for (var i = 0; i < artisans.length; i++) {
+      if (artisans[i].id === artisan.id) {
+        artisans[i].quantity = (Number(artisans[i].quantity) || 0) + n;
+        setArtisans(artisans);
+        renderProducts();
+        renderSellerHub();
+        alert('Stock updated.');
+        return;
+      }
+    }
+  });
+
+  document.getElementById('btn-reset-sellers-orders').addEventListener('click', function () {
+    if (!confirm('Clear all sellers and orders in this browser?')) return;
+    if (!confirm('This cannot be undone. Continue?')) return;
+    resetAllSellersAndOrders();
+  });
+
+  document.getElementById('admin-login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = (document.getElementById('admin-access-code').value || '').trim();
+    var toast = document.getElementById('admin-login-toast');
+    toast.className = 'toast';
+    toast.textContent = '';
+    if (code !== ADMIN_ACCESS_CODE) {
+      toast.className = 'toast error show';
+      toast.textContent = 'Wrong password.';
+      return;
+    }
+    setAdminSession();
+    document.getElementById('admin-access-code').value = '';
+    updateAdminLayout();
+    updateDashboard();
+  });
+
+  document.getElementById('btn-admin-logout').addEventListener('click', function () {
+    clearAdminSession();
+    updateAdminLayout();
+  });
+
+  document.getElementById('btn-admin-add-seller').addEventListener('click', function () {
+    openAdminArtisanModal(-1);
+  });
+
+  document.getElementById('admin-artisan-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    saveAdminArtisanFromForm();
+  });
+
+  document.getElementById('btn-adm-art-cancel').addEventListener('click', closeAdminArtisanModal);
+
+  fillStateSelects();
+  initData();
+  cloudBootstrap();
+  updateSellerViewPanels();
+  updateAdminLayout();
+  renderProducts();
+  updateDashboard();
+  renderSellerHub();
+})();
+
+</script>
+</body>
+</html>
+
