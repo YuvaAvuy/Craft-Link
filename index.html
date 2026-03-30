@@ -397,7 +397,8 @@
   <footer class="site-footer">
     <p class="motto" id="footer-motto"></p>
     <p class="contact"><strong>Contact:</strong> <a href="mailto:hello@craftlink.in">hello@craftlink.in</a> - <a href="tel:+9118004258899">+91-1800-425-8899</a></p>
-    <p class="note">Demo: data stored in this browser only.</p>
+    <p class="note" id="sync-status" style="max-width:42rem;margin-left:auto;margin-right:auto;"></p>
+    <p class="note">Catalogue is local; sellers &amp; orders sync to the cloud when Firebase is configured.</p>
   </footer>
 
   <!-- Modals -->
@@ -640,15 +641,19 @@
   }
 
   function cloudEnable() {
-    if (cloud.enabled) return;
-    cloud.enabled = cloudOkToEnable();
-    if (!cloud.enabled) return;
+    if (cloud.db) return;
+    if (!cloudOkToEnable()) return;
     try {
-      firebase.initializeApp(FIREBASE_CONFIG);
+      if (!firebase.apps || firebase.apps.length === 0) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
       cloud.db = firebase.firestore();
       cloud.auth = firebase.auth();
+      cloud.enabled = true;
     } catch (e) {
       cloud.enabled = false;
+      cloud.db = null;
+      cloud.auth = null;
     }
   }
 
@@ -662,21 +667,20 @@
       );
   }
 
-  function cloudListen(kind, onArr) {
+  function cloudListen(kind, onArr, onErr) {
     if (!cloud.enabled || !cloud.db) return function () {};
     return cloudColRef(kind).onSnapshot(
       function (snap) {
         var arr = [];
         snap.forEach(function (doc) {
           var d = doc.data() || {};
-          // Keep document id in sync with record id (prefer record id)
           if (!d.id) d.id = doc.id;
           arr.push(d);
         });
         onArr(arr);
       },
-      function () {
-        // ignore errors; local cache still works
+      function (err) {
+        if (typeof onErr === 'function') onErr(err);
       }
     );
   }
@@ -2164,50 +2168,147 @@
   }
 
   function refreshAllViews() {
-    // Keep UI consistent when cloud pushes changes from another device.
     renderProducts();
     updateDashboard();
     renderSellerHub();
   }
 
-  function cloudBootstrap() {
-    cloudEnable();
-    if (!cloud.enabled) return Promise.resolve(false);
-    return cloudSignIn().then(function (ok) {
-      if (!ok) return false;
-      cloud.ready = true;
-      // Realtime listeners
-      if (cloud.unsubArtisans) cloud.unsubArtisans();
-      if (cloud.unsubOrders) cloud.unsubOrders();
-      cloud.unsubArtisans = cloudListen('artisans', function (arr) {
-        memArtisans = arr || [];
-        saveJSON(STORAGE_ARTISANS, memArtisans);
-        refreshAllViews();
+  function setSyncStatus(message, asError) {
+    var el = document.getElementById('sync-status');
+    if (!el) return;
+    el.textContent = message || '';
+    el.style.color = asError ? '#b42318' : '#5c5854';
+  }
+
+  function buildPriceHintMap() {
+    var rawProducts = loadJSON(STORAGE_PRODUCTS, null);
+    var priceHintMap = {};
+    if (rawProducts && rawProducts.length) {
+      rawProducts.forEach(function (p) {
+        priceHintMap[p.id] = Number(p.price) || Number(p.suggestedPrice) || 0;
       });
-      cloud.unsubOrders = cloudListen('orders', function (arr) {
-        memOrders = arr || [];
+    }
+    return priceHintMap;
+  }
+
+  function applyCloudData(cloudArts, cloudOrds) {
+    var arts = migrateArtisans(cloudArts || [], buildPriceHintMap());
+    var ords = migrateOrders(cloudOrds || []);
+    ords = attachArtisanIdsToOrders(ords, arts);
+    memArtisans = arts;
+    memOrders = ords;
+    saveJSON(STORAGE_ARTISANS, memArtisans);
+    saveJSON(STORAGE_ORDERS, memOrders);
+    refreshAllViews();
+  }
+
+  function cloudAttachListeners() {
+    if (cloud.unsubArtisans) cloud.unsubArtisans();
+    if (cloud.unsubOrders) cloud.unsubOrders();
+    cloud.unsubArtisans = cloudListen(
+      'artisans',
+      function (arr) {
+        memArtisans = migrateArtisans(arr || [], buildPriceHintMap());
+        saveJSON(STORAGE_ARTISANS, memArtisans);
+        memOrders = attachArtisanIdsToOrders(memOrders || [], memArtisans);
         saveJSON(STORAGE_ORDERS, memOrders);
         refreshAllViews();
-      });
+      },
+      function (err) {
+        setSyncStatus(
+          'Firestore (sellers) permission error: ' + (err && err.message ? err.message : 'check rules') + '.',
+          true
+        );
+      }
+    );
+    cloud.unsubOrders = cloudListen(
+      'orders',
+      function (arr) {
+        memOrders = attachArtisanIdsToOrders(migrateOrders(arr || []), getArtisans());
+        saveJSON(STORAGE_ORDERS, memOrders);
+        refreshAllViews();
+      },
+      function (err) {
+        setSyncStatus(
+          'Firestore (orders) permission error: ' + (err && err.message ? err.message : 'check rules') + '.',
+          true
+        );
+      }
+    );
+  }
 
-      // One-time seed logic: if cloud empty but local has data, upload local.
-      return Promise.all([cloudGetAll('artisans'), cloudGetAll('orders'), cloudGetMeta()]).then(function (res) {
+  /**
+   * IMPORTANT: Listeners used to attach BEFORE seeding finished. The first snapshot is often
+   * empty, which overwrote local sellers/orders with [] before upload ran. Bootstrap order is
+   * now: sign in → read cloud → optionally upload local → merge → cloud.ready = true → listen.
+   */
+  function cloudBootstrap() {
+    cloud.ready = false;
+    cloudEnable();
+    if (!cloud.enabled || !cloud.db) {
+      setSyncStatus(
+        CLOUD_SYNC_ENABLED
+          ? 'Cloud sync misconfigured or Firebase scripts blocked. Check index.html and browser console.'
+          : 'Device-only mode: set CLOUD_SYNC_ENABLED + Firebase config to sync phone and laptop.',
+        !!CLOUD_SYNC_ENABLED
+      );
+      return Promise.resolve(false);
+    }
+
+    setSyncStatus('Connecting to cloud…', false);
+
+    var localArts = JSON.parse(JSON.stringify(memArtisans != null ? memArtisans : []));
+    var localOrds = JSON.parse(JSON.stringify(memOrders != null ? memOrders : []));
+
+    return cloudSignIn()
+      .then(function (ok) {
+        if (!ok) {
+          setSyncStatus(
+            'Anonymous sign-in failed. In Firebase Console open Authentication → Sign-in method → enable Anonymous.',
+            true
+          );
+          return null;
+        }
+        return Promise.all([cloudGetAll('artisans'), cloudGetAll('orders')]);
+      })
+      .then(function (res) {
+        if (!res) return false;
         var cloudArts = res[0] || [];
         var cloudOrds = res[1] || [];
-        var meta = res[2] || {};
-
-        var localArts = getArtisans();
-        var localOrds = getOrders();
-
-        var cloudEmpty = cloudArts.length === 0 && cloudOrds.length === 0 && !meta.updatedAt;
-        if (cloudEmpty && (localArts.length || localOrds.length)) {
-          cloudOverwriteCollection('artisans', localArts, function (a) { return a && a.id; });
-          cloudOverwriteCollection('orders', localOrds, function (o) { return o && o.id; });
-          cloudSetMeta({ updatedAt: new Date().toISOString(), seededFrom: 'local' });
+        var seedTasks = [];
+        if (cloudArts.length === 0 && localArts.length > 0) {
+          seedTasks.push(cloudOverwriteCollection('artisans', localArts, function (a) { return a && a.id; }));
         }
+        if (cloudOrds.length === 0 && localOrds.length > 0) {
+          seedTasks.push(cloudOverwriteCollection('orders', localOrds, function (o) { return o && o.id; }));
+        }
+        return Promise.all(seedTasks)
+          .then(function () {
+            if (seedTasks.length) {
+              return cloudSetMeta({ updatedAt: new Date().toISOString(), seededFrom: 'local' });
+            }
+            return true;
+          })
+          .then(function () {
+            return Promise.all([cloudGetAll('artisans'), cloudGetAll('orders')]);
+          });
+      })
+      .then(function (finalRes) {
+        if (finalRes === false) return false;
+        var finalArts = finalRes[0] || [];
+        var finalOrds = finalRes[1] || [];
+        if (finalArts.length || finalOrds.length) {
+          applyCloudData(finalArts, finalOrds);
+        }
+        cloud.ready = true;
+        cloudAttachListeners();
+        setSyncStatus('Live sync on — sellers and orders update across your devices.', false);
         return true;
+      })
+      .catch(function (e) {
+        setSyncStatus('Cloud error: ' + (e && e.message ? e.message : String(e)) + ' (Firestore rules / network).', true);
+        return false;
       });
-    });
   }
 
   document.getElementById('footer-motto').textContent = MOTTO;
